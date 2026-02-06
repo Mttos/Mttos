@@ -8,3 +8,4 @@
 Mttos/Mttos is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 You can click the Preview link to take a look at your changes.
 --->
+rendercv render cv.yaml --theme moderncv
