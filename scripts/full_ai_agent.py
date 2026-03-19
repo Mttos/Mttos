@@ -1,51 +1,53 @@
-import json
 import os
+import json
+import re
+from langdetect import detect
+from github import Github
+from transformers import DistilGPT2Tokenizer, DistilGPT2LMHeadModel
 
 class FullAIAgent:
-    def __init__(self, task_type):
-        self.task_type = task_type
-        self.specialized_prompts = {
-            'CODE_REVIEW': 'Please review the following code:',
-            'DOCUMENTATION': 'Please provide documentation for the following topic:',
-            'SUMMARY': 'Please summarize the following content:',
-            'TESTING': 'Please generate tests for the following code:',
-            'CUSTOM': 'Please perform the following task:'
+    def __init__(self, github_token):
+        # Initialize GitHub integration
+        self.github = Github(github_token)
+        self.repo = self.github.get_repo("username/repo")  # Replace with actual repo
+        self.tokenizer = DistilGPT2Tokenizer.from_pretrained('distilgpt2')
+        self.model = DistilGPT2LMHeadModel.from_pretrained('distilgpt2')
+
+    def analyze_files(self, file_paths):
+        analysis_results = {}
+        for file_path in file_paths:
+            if os.path.isfile(file_path):
+                with open(file_path, 'r') as file:
+                    content = file.read()
+                    analysis_results[file_path] = self.detect_task(content)
+        return analysis_results
+
+    def detect_task(self, content):
+        task_keywords = {
+            'CODE_REVIEW': ['code', 'review', 'refactor'],
+            'DOCUMENTATION': ['document', 'guide', 'tutorial'],
+            'SUMMARY': ['summary', 'overview', 'abstract'],
+            'TESTING': ['test', 'unit', 'integration'],
+            'CUSTOM': ['custom']
         }
+        for task, keywords in task_keywords.items():
+            if any(re.search(r'\b' + keyword + r'\b', content, re.IGNORECASE) for keyword in keywords):
+                return task
+        return 'UNKNOWN'
 
-    def detect_task(self, task_description):
-        # Placeholder for detecting task type based on description
-        # For now, return a fixed task type
-        return self.task_type
-
-    def analyze_files(self, files):
-        results = []
-        for file in files:
-            results.append(self.process_file(file))
-        return results
-
-    def process_file(self, file):
-        # Placeholder for file processing logic
-        # This can include reading, analyzing, and generating insights
-        return f'Processed {file}'
+    def generate_response(self, prompt):
+        inputs = self.tokenizer.encode(prompt, return_tensors='pt')
+        outputs = self.model.generate(inputs, max_length=1000, num_return_sequences=1)
+        response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+        return self.split_response(response)
 
     def split_response(self, response):
-        # Split response based on some criteria (e.g., length)
-        return response.split('\n')  # Split on new lines
+        # Split response if longer than 3000 characters
+        return [response[i:i + 3000] for i in range(0, len(response), 3000)]
 
-    def generate_prompt(self):
-        return self.specialized_prompts.get(self.task_type, self.specialized_prompts['CUSTOM'])
+    def handle_error(self, error):
+        print(f"Error: {str(error)}")  # Placeholder for error handling functionality
 
 # Example usage:
-task_type = 'CODE_REVIEW'
-agent = FullAIAgent(task_type)
-description = 'Review the following implementation.'
-task = agent.detect_task(description)
-
-files = ['script1.py', 'script2.py']
-results = agent.analyze_files(files)
-response = agent.split_response('This is a response\nSplit me!')
-
-prompt = agent.generate_prompt() 
-print(prompt)
-print(results)
-print(response)
+# agent = FullAIAgent('your_github_token')
+# agent.analyze_files(['file1.py', 'file2.js', 'file3.json'])
