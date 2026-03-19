@@ -71,11 +71,16 @@ class AIAgent:
         try:
             # Obtener issues abiertos
             issues = self.repo.get_issues(state='open')
-            latest_issue = next(issues, None)
             
-            if not latest_issue:
-                logger.info("❌ No hay issues abiertos")
+            # ✅ FIX: Convertir a lista primero
+            issue_list = list(issues)
+            
+            if not issue_list:
+                issue_list = list(issues)latest_issue = issue_list[0]
                 return
+            
+            # ✅ Obtener el primer issue
+            latest_issue = issue_list[0]
             
             logger.info(f"📋 Procesando Issue #{latest_issue.number}: {latest_issue.title}")
             
