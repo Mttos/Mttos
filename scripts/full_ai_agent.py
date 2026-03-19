@@ -1,44 +1,51 @@
+import json
 import os
-import openai
-import transformers
-import requests
 
-# Function to read issues from a GitHub repository
-def read_issues(repo_owner, repo_name):
-    url = f'https://api.github.com/repos/{repo_owner}/{repo_name}/issues'
-    response = requests.get(url)
-    return response.json()
+class FullAIAgent:
+    def __init__(self, task_type):
+        self.task_type = task_type
+        self.specialized_prompts = {
+            'CODE_REVIEW': 'Please review the following code:',
+            'DOCUMENTATION': 'Please provide documentation for the following topic:',
+            'SUMMARY': 'Please summarize the following content:',
+            'TESTING': 'Please generate tests for the following code:',
+            'CUSTOM': 'Please perform the following task:'
+        }
 
-# Function to analyze files in the repository
-def analyze_files(repo_path):
-    files_data = {}
-    for root, dirs, files in os.walk(repo_path):
+    def detect_task(self, task_description):
+        # Placeholder for detecting task type based on description
+        # For now, return a fixed task type
+        return self.task_type
+
+    def analyze_files(self, files):
+        results = []
         for file in files:
-            with open(os.path.join(root, file), 'r') as f:
-                files_data[file] = f.read()
-    return files_data
+            results.append(self.process_file(file))
+        return results
 
-# Function to generate responses using Hugging Face transformers
-def generate_response(prompt):
-    model = transformers.AutoModelForCausalLM.from_pretrained('gpt2')
-    tokenizer = transformers.AutoTokenizer.from_pretrained('gpt2')
-    inputs = tokenizer.encode(prompt, return_tensors='pt')
-    outputs = model.generate(inputs, max_length=150)
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
+    def process_file(self, file):
+        # Placeholder for file processing logic
+        # This can include reading, analyzing, and generating insights
+        return f'Processed {file}'
 
-# Example usage of the functions
-def main():
-    repo_owner = 'Mttos'
-    repo_name = 'Mttos'
-    issues = read_issues(repo_owner, repo_name)
-    print("Issues:", issues)
-    # You would also provide the repo path to analyze files
-    # repo_path = './path_to_repo'
-    # files_data = analyze_files(repo_path)
-    # print("Files Data:", files_data)
-    prompt = "Write a short summary of the current issues in the repository."
-    response = generate_response(prompt)
-    print("Generated Response:", response)
+    def split_response(self, response):
+        # Split response based on some criteria (e.g., length)
+        return response.split('\n')  # Split on new lines
 
-if __name__ == '__main__':
-    main()
+    def generate_prompt(self):
+        return self.specialized_prompts.get(self.task_type, self.specialized_prompts['CUSTOM'])
+
+# Example usage:
+task_type = 'CODE_REVIEW'
+agent = FullAIAgent(task_type)
+description = 'Review the following implementation.'
+task = agent.detect_task(description)
+
+files = ['script1.py', 'script2.py']
+results = agent.analyze_files(files)
+response = agent.split_response('This is a response\nSplit me!')
+
+prompt = agent.generate_prompt() 
+print(prompt)
+print(results)
+print(response)
