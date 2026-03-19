@@ -1,0 +1,31 @@
+name: Full AI Agent
+
+on:
+  workflow_dispatch:
+  issues:
+    types: [opened, edited, reopened, created]
+  push:
+    branches:
+      - main
+
+jobs:
+  ai_agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pyyaml gitpython transformers sentencepiece PyGithub torch
+      
+      - name: Run AI Agent
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/full_ai_agent.py
